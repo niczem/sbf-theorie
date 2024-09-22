@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Fragen</title>
+</head>
+<body>
+    <h1>Fragen und Antworten</h1>
+    {{ questions }}
+    {% for question in questions %}
+        <div class="question">
+            <h2>{{ question.question }}</h2>
+            <ul>
+                {% for answer in question.answers %}
+                    <li>{{ answer }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endfor %}
+</body>
+</html>
