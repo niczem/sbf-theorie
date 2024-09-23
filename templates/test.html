@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>SBF Test</title>
+    <style>
+body{
+    font-family: Verdana, Geneva, Tahoma, Geneva, Arial, sans-serif;
+}
+.question_block{
+    position:fixed;
+    right:5%;
+    left:5%;
+    top:20px;
+    padding:30px;
+    border: 1px solid #d9d9d9;
+}
+.question{
+    font-size:22px;
+}
+
+.question_block p{
+    margin:0;
+}
+.question_block ul{
+    padding:0;
+    margin:0;
+    margin-top:20px;
+    list-style:none;
+}
+    </style>
+</head>
+<body>
+        <div class="question_block">
+            <div class="question">{{ question.question|safe }}</div>
+            <ul>
+                {% for answer in question.answers %}
+                    <li>
+                    {% if answer == question.correct_answer %}
+                        <input type="radio" name="answer" value="correct" id="{{ loop.index }}">
+                    {% else %}
+                        <input type="radio" name="answer" value="wrong" id="{{ loop.index }}">
+                    {% endif %}
+                        <label for="{{ loop.index }}">{{ answer }}</label>
+                        
+                    </li>
+                    {% if answer == question.correct_answer %}
+                        <!--<b>richtig</b>-->
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </div>
+        <script>
+            // Select all radio inputs
+const radios = document.querySelectorAll('input[type="radio"]');
+
+// Add event listener to each radio button
+radios.forEach(radio => {
+    radio.addEventListener('change', () => {
+        // Alert the value of the checked radio button
+        const checkedRadio = document.querySelector('input[name="' + radio.name + '"]:checked');
+        //alert(`You selected: ${checkedRadio.value}`);
+        const parentLi = checkedRadio.closest('li');
+        if(checkedRadio.value == 'correct'){
+            if (parentLi) {
+                parentLi.style.backgroundColor = '#B2FFFC'; // Pastel green background
+            }
+            setTimeout(()=>{
+                window.location.reload();
+            },500)
+        }else
+            alert(`Falsch!`);
+    });
+});
+        </script>
+</body>
+</html>

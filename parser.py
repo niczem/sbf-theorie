@@ -4,6 +4,7 @@ import sqlite3
 import json
 from flask import Flask, render_template
 import sqlite3
+import random
 
 app = Flask(__name__)
 
@@ -24,6 +25,30 @@ def get_questions():
     conn.close()
 
     return render_template('index.html', questions=questions)
+@app.route('/test')
+def test():
+    conn = sqlite3.connect('questions.db')
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT id, question, answers FROM questions")
+    rows = cursor.fetchall()
+
+    questions = [{'id': row[0], 'question': row[1], 'answers': eval(row[2])} for row in rows]
+
+    
+    question = random.choice(questions)
+    print(question['answers'])
+    question['correct_answer'] = question['answers'][0]
+    answers = random.sample(question['answers'], len(question['answers']))
+    correct_answer_count = 0
+    for answer in answers:
+        if answer == question['correct_answer']:
+            question['correct_answer_id'] = correct_answer_count
+        correct_answer_count = correct_answer_count+1
+    question['answers'] = answers
+    conn.close()
+
+    return render_template('test.html', question=question)
     return {'questions': questions}
 
 
@@ -63,14 +88,23 @@ def parse_html(file_name):
     return result
 
 if __name__ == "__main__":
-    # Set up argument parser
-    parser = argparse.ArgumentParser(description="Parse questions and answers from an HTML file.")
-    parser.add_argument('file_name', type=str, help='The name of the HTML file to parse.')
-    
-    # Parse arguments
+    parser = argparse.ArgumentParser(description="Process HTML files or serve the application.")
+    parser.add_argument('-p', '--parse', action='store_true', help='Parse an HTML file')
+    parser.add_argument('-s', '--serve', action='store_true', help='Serve the application')
+    parser.add_argument('file_name', nargs='?', help='Name of the HTML file to parse (optional)')
     args = parser.parse_args()
-    
-    # Call the parsing function with the file name
-    results = parse_html(args.file_name)
-    #store_questions_in_sqlite(results)
-    app.run(debug=True)
+
+    if args.parse and args.serve:
+        parser.error("Cannot parse and serve simultaneously. Please choose one.")
+
+    if args.parse:
+        if args.file_name:
+            results = parse_html(args.file_name)
+            # uncomment in case you want to store questions
+            #store_questions_in_sqlite(results)
+        else:
+            parser.error("Please provide a filename when parsing.")
+    elif args.serve:
+        app.run(debug=True, host='0.0.0.0', port=8080)
+    else:
+        parser.print_help()
