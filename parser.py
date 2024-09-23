@@ -92,7 +92,7 @@ def dump():
     conn = sqlite3.connect('questions.db')
     cursor = conn.cursor()
 
-    cursor.execute("SELECT id, question, answers, source FROM questions LIMIT 0,4")
+    cursor.execute("SELECT id, question, answers, source FROM questions")
     rows = cursor.fetchall()
 
     questions = [{'id': row[0], 'question': row[1], 'answers': eval(row[2]), 'source':row[3]} for row in rows]
