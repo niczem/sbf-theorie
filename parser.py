@@ -1,4 +1,5 @@
 import argparse
+import os
 from bs4 import BeautifulSoup,NavigableString
 import sqlite3
 import json
@@ -52,7 +53,7 @@ def test():
     return {'questions': questions}
 
 
-def store_questions_in_sqlite(data):
+def store_questions_in_sqlite(data, source):
     conn = sqlite3.connect('questions.db')
     cursor = conn.cursor()
 
@@ -60,12 +61,13 @@ def store_questions_in_sqlite(data):
     cursor.execute('''CREATE TABLE IF NOT EXISTS questions
                       (id INTEGER PRIMARY KEY AUTOINCREMENT,
                        question TEXT,
-                       answers TEXT)''')
+                       answers TEXT,
+                       source TEXT)''')
 
     # Insert data into the table
     for item in data:
-        cursor.execute("INSERT INTO questions (question, answers) VALUES (?, ?)",
-                       (item['question'], json.dumps(item['answers'])))
+        cursor.execute("INSERT INTO questions (question, answers, source) VALUES (?, ?, ?)",
+                       (item['question'], json.dumps(item['answers']), source))
 
     conn.commit()
     conn.close()
@@ -86,11 +88,21 @@ def parse_html(file_name):
 
     print(result)
     return result
+def dump():
+    conn = sqlite3.connect('questions.db')
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT id, question, answers, source FROM questions LIMIT 0,4")
+    rows = cursor.fetchall()
+
+    questions = [{'id': row[0], 'question': row[1], 'answers': eval(row[2]), 'source':row[3]} for row in rows]
+    print(json.dumps(questions, ensure_ascii=False))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process HTML files or serve the application.")
     parser.add_argument('-p', '--parse', action='store_true', help='Parse an HTML file')
     parser.add_argument('-s', '--serve', action='store_true', help='Serve the application')
+    parser.add_argument('-d', '--dump', help='dump all entries as json')
     parser.add_argument('file_name', nargs='?', help='Name of the HTML file to parse (optional)')
     args = parser.parse_args()
 
@@ -101,10 +113,12 @@ if __name__ == "__main__":
         if args.file_name:
             results = parse_html(args.file_name)
             # uncomment in case you want to store questions
-            #store_questions_in_sqlite(results)
+            store_questions_in_sqlite(results,os.path.splitext(os.path.basename(args.file_name))[0])
         else:
             parser.error("Please provide a filename when parsing.")
     elif args.serve:
         app.run(debug=True, host='0.0.0.0', port=8080)
+    elif args.dump:
+        dump()
     else:
         parser.print_help()
